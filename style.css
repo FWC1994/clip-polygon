@@ -40,7 +40,22 @@ html,body{
 }
 #reset:hover{
     background-color: #1B85CF;
-    
+}
+#github{
+    width:50px;
+    height: 50px;
+    text-align: center;
+    cursor:pointer;
+    position: absolute;
+    top:0;
+    left:50%;
+    margin-left:-25px;
+    border-radius: 0 0 5px 5px;
+    z-index:9999;
+    background-color: #fff;
+}
+.github-icon{
+    margin-top:8px;
 }
 .leaflet-marker-pane .leaflet-editing-icon  {
     margin-left: -6px !important;

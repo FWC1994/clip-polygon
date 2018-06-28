@@ -12,6 +12,7 @@
 <body onload="loadMap()">
     <div id='map'></div>
     <div id='msg'>先在地图上点击要裁剪的多边形</div>
+    <div id='reset' onclick="resetClip()">重置</div>
 </body>
 <script src="https://cdn.bootcss.com/Turf.js/5.1.6/turf.min.js"></script>
 <script src="https://cdn.bootcss.com/leaflet/1.3.1/leaflet.js"></script>
@@ -23,6 +24,7 @@ var editLayer = null;
 var drawView = null;
 var polygonLayer = null;
 var clipResultLayer = null;
+var clipLineLayer = null;
 var colorList = ['#00FF66','#66CCFF','#6600FF','#FF9933','#FF3333']
 function loadMap(){
     
@@ -76,7 +78,7 @@ function loadMap(){
         }
     });
     // 添加Leaflet.Draw标绘功能
-    var clipLineLayer = new L.Draw.Polyline(map);
+    clipLineLayer = new L.Draw.Polyline(map);
 	clipLineLayer.setOptions({
         showLength:false,
         shapeOptions:{
@@ -140,12 +142,13 @@ function loadMap(){
     };
     L.control.layers(baseMaps, overlayMaps).addTo(map);
 }
-function polygonLayerToggle(){
-    if(document.getElementById("polygon-layer").checked){
-        polygonLayer.show()
-    }else{
-        polygonLayer.hide()
-    }
+function resetClip(){
+    clipResultLayer.clearLayers();
+    drawView.clearLayers();
+    polygonLayer.setStyle(
+        {color: '#fff'}
+    )
+    document.getElementById('msg').innerText='先在地图上点击要裁剪的多边形'; 
 }
 </script>
 </html>

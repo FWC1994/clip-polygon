@@ -1,0 +1,30 @@
+html,body{
+    height:100%;
+    width:100%;
+    padding:0;
+    margin:0;
+}
+#map{
+    height:100%;
+    width:100%;
+}
+#msg{
+    width:200px;
+    padding:20px;
+    background: #ffffff;
+    position: absolute;
+    bottom:10px;
+    left:10px;
+    font-size: 15px;
+    z-index:9999;
+    
+}
+.leaflet-marker-pane .leaflet-editing-icon  {
+    margin-left: -6px !important;
+    margin-top: -6px !important;
+    width: 12px !important;
+    height: 12px !important;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.50);
+    border-radius: 50px;
+}

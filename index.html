@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link href="./style.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/leaflet/1.3.1/leaflet.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/leaflet.draw/1.0.2/leaflet.draw.css" rel="stylesheet">
+</head>
+<body onload="loadMap()">
+    <div id='map'></div>
+    <div id='msg'>先在地图上点击要裁剪的多边形</div>
+</body>
+<script src="https://cdn.bootcss.com/Turf.js/5.1.6/turf.min.js"></script>
+<script src="https://cdn.bootcss.com/leaflet/1.3.1/leaflet.js"></script>
+<script src="https://cdn.bootcss.com/leaflet.draw/1.0.2/leaflet.draw.js"></script>
+<script src="./clip.js"></script>
+<script>
+var map = null;
+var editLayer = null;
+var drawView = null;
+var polygonLayer = null;
+var clipResultLayer = null;
+var colorList = ['#00FF66','#66CCFF','#6600FF','#FF9933','#FF3333']
+function loadMap(){
+    
+    // 创建地图对象
+    map = L.map('map').setView([39.91036,116.403704], 10);
+    var basemap = L.tileLayer('http://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
+        attribution: ''
+    }).addTo(map);
+    // 创建标绘图层
+    drawView = new L.geoJSON(null, {}).addTo(map);
+    clipResultLayer = new L.geoJSON(null, {}).addTo(map);
+    // 创建多边形图层及添加测试geojson数据
+    polygonLayer = L.geoJSON(null, {
+                    style: function (feature) {
+                        return {color: '#fff'};
+                    }
+    }).addTo(map);
+    polygonLayer.addData({ 
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[ 
+                [116.2535,40.009898], [116.25144,39.971495], [116.324225,39.990436],
+                [116.296072,40.032509], [116.2535,40.009898] 
+            ]]
+        }
+    });
+    polygonLayer.addData({ 
+        "type": "Feature",
+        "geometry": { 
+            "type": "Polygon",
+            "coordinates": [               
+                    [[116.490393,39.88435], [116.596823,39.895413], [116.626349,39.784167], [116.409369,39.775197], [116.490393,39.88435]],
+                    [[116.502285,39.870091],[116.516018,39.800887],[116.599789,39.795744], [116.567001,39.870486],   [116.502285,39.870091]
+                ]
+            ]
+        }
+    });
+    polygonLayer.addData({ 
+        "type": "Feature",
+        "geometry": { 
+            "type": "MultiPolygon",
+            "coordinates": [
+                [
+                    [[116.361303,39.926488], [116.454001,39.935439], [116.437521,39.874338], [116.359243,39.876973], [116.361303,39.926488]]
+                ],
+                [
+                    [[116.493530,40.058103], [116.665192,40.064410], [116.677551,39.930801], [116.512756,39.947648], [116.493530,40.058103]] 
+                ]         
+            ]
+        }
+    });
+    // 添加Leaflet.Draw标绘功能
+    var clipLineLayer = new L.Draw.Polyline(map);
+	clipLineLayer.setOptions({
+        showLength:false,
+        shapeOptions:{
+            stroke: true,
+            color: '#3388ff',
+            weight: 1,
+            opacity: 0.7,
+            dashArray: '5,5'
+        }
+    })
+    L.drawLocal.draw.handlers.polyline.tooltip = {
+        start: '点击地图开始裁剪',
+        cont: '点击地图开始裁剪',
+        end: '双击地图或点击最后一个点完成裁剪'
+    }
+    //地图或图层事件绑定
+/*     map.on('click',function(evt){
+        console.log(evt.latlng.lng.toFixed(6)+','+evt.latlng.lat.toFixed(6))
+    }) */
+    polygonLayer.on('click', function(evt) {
+        if(drawView){
+            drawView.clearLayers()
+        }
+        editLayer = evt.layer;
+        polygonLayer.setStyle(
+            {color: '#fff'}
+        )
+        editLayer.setStyle(
+            {color: '#ecf53e'}
+        )
+        clipLineLayer.enable();
+        document.getElementById('msg').innerText='绘制切割线'  
+    });
+    map.on('draw:created', function(evt){      
+        drawView.addLayer(evt.layer)
+        var clipLine = L.polyline(evt.layer.editing.latlngs[0])
+        var intersects = turf.lineIntersect(turf.polygonToLine(editLayer.feature), clipLine.toGeoJSON());
+        try{
+            var clippedPolygon = geoUtil.polygonClipByLine(editLayer.feature,clipLine.toGeoJSON());
+            for(var i=0; i < clippedPolygon.features.length; i++){
+                var newLayer = new L.geoJSON(clippedPolygon.features[i], {
+                    style: {color:colorList[i]}
+                });
+                clipResultLayer.addLayer(newLayer);
+            }
+            document.getElementById('msg').innerHTML='<div style="color:#3fcf3f;">多边形裁剪成功</div>'  
+        }catch(error){
+            document.getElementById('msg').innerHTML='<div style="color:#ff0000;">'+error.state+':</br>'+error.message+'</div>'  
+        }
+        
+        
+    })  
+
+    var baseMaps = {
+        "蓝黑底图": basemap,
+    };
+
+    var overlayMaps = {
+        "polygon图层": polygonLayer,
+        "裁剪result图层": clipResultLayer
+    };
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
+}
+function polygonLayerToggle(){
+    if(document.getElementById("polygon-layer").checked){
+        polygonLayer.show()
+    }else{
+        polygonLayer.hide()
+    }
+}
+</script>
+</html>
